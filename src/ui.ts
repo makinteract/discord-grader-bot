@@ -3,17 +3,20 @@ import InquirerFuzzyPath from 'inquirer-fuzzy-path';
 import path from 'path';
 import colors from 'colors';
 
-function displayMessage(message: string) {
-  console.clear();
+function displayMessage(message: string, clear: boolean = false) {
+  if (clear) console.clear();
   console.log(colors.rainbow(`${message}`));
 }
-function displayError(message: string) {
+function displayError(message: string, clear: boolean = false) {
+  if (clear) console.clear();
   console.log(colors.red(`${message}`));
 }
-function displaySuccess(message: string) {
+function displaySuccess(message: string, clear: boolean = false) {
+  if (clear) console.clear();
   console.log(colors.green(`${message}`));
 }
-function displayWarning(message: string) {
+function displayWarning(message: string, clear: boolean = false) {
+  if (clear) console.clear();
   console.log(colors.yellow(`${message}`));
 }
 

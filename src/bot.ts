@@ -47,34 +47,5 @@ class Bot {
     });
   }
 }
-// Get started
-
-// Helper
-
-// async function sendMessage(userId: string, textMessage: string, test: boolean) {
-//   if (test) {
-//     console.log(userId, textMessage, '\n');
-//   } else {
-//     // send message via discord
-//     const user = await client.users.fetch(userId).catch(() => null);
-//     if (!user) return;
-
-//     console.log('Sending to ', userId, textMessage, '\n');
-//     await user.send(textMessage).catch(() => {
-//       console.error(
-//         'User has DMs closed or has no mutual servers with the bot'
-//       );
-//     });
-//   }
-// }
 
 export { Bot };
-
-/*
-//   let message = `Hello ${name}. For ${homework} you received a score of **${score}/100**. The class average was **${average}/100**.\n`;
-//   message += `This are the scores for the individual parts: ${scoreText}`;
-//   message += notes ? `Notes:  ${notes}` : 'No notes';
-//   return message;
-// }
-
-*/

@@ -15,14 +15,16 @@ import {
 } from './ui';
 import { DiscordUser, getDiscordUsers, Score, getScores } from './grader';
 
+// Constants
 const DATA_DIR = 'data';
 const DEFAULT_TITLE = 'Homework';
 
-let messages: { discordID: string; message: string }[] = [];
+// Entry point
+executeFlow();
 
 async function executeFlow() {
   // 0. Hello
-  displayMessage('✨ Welcome to the grader Bot ✨');
+  displayMessage('✨ Welcome to the grader Bot ✨', true);
 
   // 1. Set title
   const title = await getInput(
@@ -63,9 +65,10 @@ async function executeFlow() {
     /.*.(xlsx|XLSX|xls|XLS)$/
   );
 
+  // Get message for the users
   const scores = getScores(scoreFile);
   const summary = summarizeData(scores, users);
-  const messagesToSend = getMessage(summary, title);
+  const messagesToSend = getMessages(summary, title);
 
   // 6. What do you want to do now?
   while (true) {
@@ -80,43 +83,18 @@ async function executeFlow() {
         displayMessage('Bye ✌️');
         process.exit();
         break;
-
       case 'Visualize the scores':
-        if (messagesToSend.length == 0) displayError('Nothing to display');
-        else
-          messagesToSend.forEach((m: Message, i: number) =>
-            i % 2 == 0 ? displaySuccess(m.message) : displayWarning(m.message)
-          );
+        visualizeMessages(messagesToSend);
         break;
-
       case 'Send the scores via Discord Bot':
-        const bot = new Bot();
-
-        const spinner = createSpinner('Sending...').start();
-        try {
-          const msg = await bot.login(2000);
-          displaySuccess(msg);
-          for (let m of messagesToSend) {
-            displaySuccess(`Sending message to ${m.discordID}`);
-            bot.sendData(m.discordID, m.message);
-          }
-          spinner.success();
-        } catch (err: any) {
-          displayError(err);
-          spinner.error();
-        }
-        break;
-
-      default:
+        sendMessages(messagesToSend);
         break;
     }
   }
 }
 
-// Entry point
-executeFlow();
-
 // Helpers
+
 type Summary = {
   id: string;
   discordID: string;
@@ -129,6 +107,7 @@ type Summary = {
 type Message = {
   discordID: string;
   message: string;
+  name: string;
 };
 
 function summarizeData(scores: Score[], users: DiscordUser[]): Summary[] {
@@ -156,17 +135,52 @@ function summarizeData(scores: Score[], users: DiscordUser[]): Summary[] {
     .filter((s: Summary | null) => s != null) as Summary[]; // need to cast!
 }
 
-function getMessage(data: Summary[], title: string): Message[] {
+function getMessages(data: Summary[], title: string): Message[] {
   const prettyTitle = `\`\`\`json\n"${title}"\n\`\`\`\n`;
 
   return data.map(
     ({ id, name, discordID, score, average, description }: Summary) => {
       return {
         discordID,
+        name,
         message:
           `${prettyTitle}Hi ${name} (${id}), your homework score is **${score} / 100** (Average: **${average} / 100**).` +
           `\n\nThe individual parts are graded this way: ${description}`,
       };
     }
   );
+}
+
+function visualizeMessages(messagesToSend: Message[]) {
+  if (messagesToSend.length == 0) displayError('Nothing to display');
+  else
+    messagesToSend.forEach((m: Message, i: number) =>
+      i % 2 == 0 ? displaySuccess(m.message) : displayWarning(m.message)
+    );
+}
+
+async function sendMessages(messagesToSend: Message[]) {
+  const bot = new Bot();
+
+  // Connect
+  try {
+    await bot.login(2000);
+    displaySuccess('Bot connected');
+  } catch (err: any) {
+    displayError(err);
+    return; // bye
+  }
+
+  // Send one by one
+  for (let m of messagesToSend) {
+    const spinner = createSpinner(
+      `Sending message to ${m.name} (${m.discordID})`
+    ).start();
+    try {
+      await bot.sendData(m.discordID, m.message);
+      spinner.success();
+    } catch (err: any) {
+      spinner?.error();
+    }
+  }
 }
