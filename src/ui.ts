@@ -5,7 +5,16 @@ import colors from 'colors';
 
 function displayMessage(message: string) {
   console.clear();
-  console.log(colors.rainbow(`${message}\n`));
+  console.log(colors.rainbow(`${message}`));
+}
+function displayError(message: string) {
+  console.log(colors.red(`${message}`));
+}
+function displaySuccess(message: string) {
+  console.log(colors.green(`${message}`));
+}
+function displayWarning(message: string) {
+  console.log(colors.yellow(`${message}`));
 }
 
 async function pickFile(
@@ -64,7 +73,7 @@ async function checkFromList(
   return selections;
 }
 
-async function getInput(message: string, defaultAnswer: string) {
+async function getInput(message: string, defaultAnswer: string = '') {
   const { answer } = await inquirer.prompt({
     name: 'answer',
     type: 'input',
@@ -77,4 +86,13 @@ async function getInput(message: string, defaultAnswer: string) {
   return answer;
 }
 
-export { displayMessage, pickFile, pickFromList, checkFromList, getInput };
+export {
+  displayMessage,
+  displayError,
+  displaySuccess,
+  displayWarning,
+  pickFile,
+  pickFromList,
+  checkFromList,
+  getInput,
+};

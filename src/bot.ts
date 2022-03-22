@@ -2,7 +2,7 @@ import DiscordJS, { Intents } from 'discord.js';
 import dotenv from 'dotenv';
 
 class Bot {
-  private client: DiscordJS.Client;
+  private client!: DiscordJS.Client;
 
   constructor() {
     dotenv.config();
@@ -19,25 +19,36 @@ class Bot {
     });
   }
 
-  goOnline() {
-    this.client.on('ready', async () => {
-      console.log('Bot is online');
+  async login(timeout: number = 1000): Promise<string> {
+    return new Promise((res, rej) => {
+      // login
+      this.client
+        .login(process.env.TOKEN)
+        .catch((_) => rej('Unable to connect to the Bot'));
 
-      //   const users: Student[] = await getStudents(PARTICIPANTS_FILE_NAME);
-      //   const scores: Score[] = getScores(HOMEWORK_SCORE_FILE_NAME);
-
-      //   // Process each student and send a discord message
-      //   users.forEach(({ ID, discordID }) => {
-      //     const entry = scores.find((value: Score) => value.ID == ID);
-      //     const gradeMessage = entry?.summary;
-      //     if (gradeMessage) sendMessage(discordID, gradeMessage, DEBUGGING);
-      //   });
-      //   console.log('DONE');
+      // ready?
+      this.client.on('ready', async () => {
+        res('Bot is ready');
+      });
+      setTimeout(() => {
+        rej('Unable to connect to the Bot');
+      }, timeout);
     });
-    this.client.login(process.env.TOKEN);
+  }
+
+  async sendData(discordID: string, message: string) {
+    // this.client.on('ready', async () => {
+    // send message via discord
+    const user = await this.client.users.fetch(discordID).catch(() => null);
+    if (!user) throw new Error('No valid discord user');
+    await user.send(message).catch(() => {
+      console.error(
+        'User has DMs closed or has no mutual servers with the bot'
+      );
+      throw new Error('testing error');
+    });
   }
 }
-
 // Get started
 
 // Helper

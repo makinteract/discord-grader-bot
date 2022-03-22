@@ -28,7 +28,8 @@ class Score {
   }
   get description() {
     return Object.entries(this._otherFileds).reduce(
-      (acc, [key, value]) => acc + ` | ${key}: ${value}`,
+      (acc: string, [key, value], i: number) =>
+        i == 0 ? acc + `**${key}**: ${value}` : acc + ` | **${key}**: ${value}`,
       ''
     );
   }
@@ -43,7 +44,7 @@ function getScores(scoreFilePath: string): Score[] {
 
   return rawdata.map(
     ({ id, score, ...props }: { id: string; score: number; props: any }) =>
-      new Score(id, score, { ...props })
+      new Score('' + id, score, { ...props })
   );
 }
 
@@ -53,6 +54,16 @@ class DiscordUser {
     private _name: string,
     private _id: string
   ) {}
+
+  get id() {
+    return this._id;
+  }
+  get discordID() {
+    return this._discordID;
+  }
+  get name() {
+    return this._name;
+  }
 
   toString(): string {
     return `${this._name} (${this._id})`;
@@ -66,7 +77,8 @@ function getDiscordUsers(participantsFilePath: string): Promise<DiscordUser[]> {
     const file = path.resolve('../data/participants.csv');
 
     createReadStream(participantsFilePath)
-      .pipe(csv({ headers: ['name', 'id', 'discordID'], skipLines: 1 })) // skip first line
+      // order is important
+      .pipe(csv({ headers: ['id', 'name', 'discordID'], skipLines: 1 })) // skip first line
       .on(
         'data',
         ({
