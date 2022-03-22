@@ -65,12 +65,12 @@ async function executeFlow() {
     /.*.(xlsx|XLSX|xls|XLS)$/
   );
 
-  // Get message for the users
+  // 6. Get message for the users
   const scores = getScores(scoreFile);
   const summary = summarizeData(scores, users);
-  const messagesToSend = getMessages(summary, title);
+  const messagesToSend = makeMessages(summary, title);
 
-  // 6. What do you want to do now?
+  // 7. What do you want to do now?
   while (true) {
     const doit = await pickFromList(
       'Do you want to do now?',
@@ -111,31 +111,35 @@ type Message = {
 };
 
 function summarizeData(scores: Score[], users: DiscordUser[]): Summary[] {
-  return scores
-    .map((score: Score): Summary | null => {
-      const user = users.find(({ id }: DiscordUser) => id === score.id);
+  return (
+    scores
+      .map((score: Score): Summary | undefined => {
+        const user = users.find(({ id }: DiscordUser) => id === score.id);
 
-      if (!user) {
-        // No discord ID found
-        return null;
-      }
-      const avgScore =
-        scores.reduce((sum: number, { score }: Score) => sum + score, 0) /
-        scores.length;
+        if (!user) {
+          // No discord ID found
+          return undefined;
+        }
+        const avgScore =
+          scores.reduce((sum: number, { score }: Score) => sum + score, 0) /
+          scores.length;
 
-      return {
-        score: score.scoreFormatted,
-        average: avgScore.toFixed(1),
-        id: score.id,
-        discordID: user.discordID,
-        name: user.name,
-        description: score.description,
-      };
-    })
-    .filter((s: Summary | null) => s != null) as Summary[]; // need to cast!
+        return {
+          score: score.scoreFormatted,
+          average: avgScore.toFixed(1),
+          id: score.id,
+          discordID: user.discordID,
+          name: user.name,
+          description: score.description,
+        };
+      })
+      // filter out the undefined values
+      // need to cast to Summary[]!
+      .filter((s: Summary | undefined) => s != undefined) as Summary[]
+  );
 }
 
-function getMessages(data: Summary[], title: string): Message[] {
+function makeMessages(data: Summary[], title: string): Message[] {
   const prettyTitle = `\`\`\`json\n"${title}"\n\`\`\`\n`;
 
   return data.map(
