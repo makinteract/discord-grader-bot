@@ -37,7 +37,6 @@ class Bot {
   }
 
   async sendData(discordID: string, message: string) {
-    // this.client.on('ready', async () => {
     // send message via discord
     const user = await this.client.users.fetch(discordID).catch(() => null);
     if (!user) throw new Error('No valid discord user');
@@ -45,7 +44,6 @@ class Bot {
       console.error(
         'User has DMs closed or has no mutual servers with the bot'
       );
-      throw new Error('testing error');
     });
   }
 }

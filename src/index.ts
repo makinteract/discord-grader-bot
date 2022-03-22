@@ -3,9 +3,6 @@
 import { Bot } from './bot';
 import inquirer from 'inquirer';
 import { createSpinner } from 'nanospinner';
-import fs from 'fs';
-import path from 'path';
-import csv from 'csv-parser';
 import {
   displayMessage,
   displayError,
@@ -17,7 +14,6 @@ import {
   getInput,
 } from './ui';
 import { DiscordUser, getDiscordUsers, Score, getScores } from './grader';
-import { random } from 'lodash';
 
 const DATA_DIR = 'data';
 const DEFAULT_TITLE = 'Homework';
