@@ -1,4 +1,11 @@
-# Discord Bot
+<style>
+  h1 img{
+    width: 50px;
+    vertical-align:bottom;
+  }
+  </style>
+
+# ![](assets/bot.png) Discord Bot
 
 Send direct private message to students with a bot to let them know about their score.
 
@@ -9,3 +16,5 @@ Make sure also to create a `.env` file in the root folder and add your bot token
 ```
 TOKEN=OTasdfasdfE2Mjkxasdfasdfw.Yhb4Cg.Hx_asdfasdfasdfasdf
 ```
+
+![](assets/screenshot.png)
