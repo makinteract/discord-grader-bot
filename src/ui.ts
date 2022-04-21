@@ -2,23 +2,17 @@ import inquirer from 'inquirer';
 import InquirerFuzzyPath from 'inquirer-fuzzy-path';
 import path from 'path';
 import colors from 'colors';
+import * as R from 'ramda';
 
-function displayMessage(message: string, clear: boolean = false) {
+function displayMessage(message: string, color: colors.Color, clear: boolean) {
   if (clear) console.clear();
-  console.log(colors.rainbow(`${message}`));
+  console.log(color(`${message}`));
 }
-function displayError(message: string, clear: boolean = false) {
-  if (clear) console.clear();
-  console.log(colors.red(`${message}`));
-}
-function displaySuccess(message: string, clear: boolean = false) {
-  if (clear) console.clear();
-  console.log(colors.green(`${message}`));
-}
-function displayWarning(message: string, clear: boolean = false) {
-  if (clear) console.clear();
-  console.log(colors.yellow(`${message}`));
-}
+
+const greet = R.curry(displayMessage)(R.__, colors.rainbow, true);
+const success = R.curry(displayMessage)(R.__, colors.green, false);
+const error = R.curry(displayMessage)(R.__, colors.red, false);
+const warning = R.curry(displayMessage)(R.__, colors.yellow, false);
 
 async function pickFile(
   message: string = 'Choose a file:',
@@ -57,20 +51,21 @@ async function pickFromList(
   return answer;
 }
 
+interface Selectable {
+  name: string;
+  value: any;
+}
+
 async function checkFromList(
   message: string = 'Check desired items from the list: ',
-  choices: string[] = [],
+  choices: Selectable[] = [],
   defaultCheck: boolean = false
 ) {
   const { selections } = await inquirer.prompt({
     name: 'selections',
     type: 'checkbox',
     message,
-    choices: choices.map((e, i) => ({
-      name: e,
-      value: { name: e, index: i },
-      checked: defaultCheck,
-    })),
+    choices,
   });
 
   return selections;
@@ -90,10 +85,10 @@ async function getInput(message: string, defaultAnswer: string = '') {
 }
 
 export {
-  displayMessage,
-  displayError,
-  displaySuccess,
-  displayWarning,
+  greet,
+  error,
+  success,
+  warning,
   pickFile,
   pickFromList,
   checkFromList,

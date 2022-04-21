@@ -6,6 +6,7 @@ class Bot {
 
   constructor() {
     dotenv.config();
+    if (!process.env.TOKEN) throw new Error('.env file not found');
 
     this.client = new DiscordJS.Client({
       intents: [
@@ -22,9 +23,11 @@ class Bot {
   async login(timeout: number = 1000): Promise<string> {
     return new Promise((res, rej) => {
       // login
-      this.client
-        .login(process.env.TOKEN)
-        .catch((_) => rej('Unable to connect to the Bot'));
+      this.client.login(process.env.TOKEN).catch((err) => {
+        console.log(err);
+
+        rej('Unable to connect to the Bot ' + err);
+      });
 
       // ready?
       this.client.on('ready', async () => {

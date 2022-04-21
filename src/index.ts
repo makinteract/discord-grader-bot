@@ -1,30 +1,45 @@
 #!/usr/bin/env node
 
-import { Bot } from './bot';
-import inquirer from 'inquirer';
 import { createSpinner } from 'nanospinner';
+import { Bot } from './bot';
 import {
-  displayMessage,
-  displayError,
-  displaySuccess,
-  displayWarning,
+  greet,
+  success,
+  error,
+  warning,
   pickFile,
   pickFromList,
   checkFromList,
   getInput,
 } from './ui';
-import { DiscordUser, getDiscordUsers, Score, getScores } from './grader';
+import {
+  Participant,
+  MessageInfo,
+  getParticipantsData,
+  generateMessage,
+  loadDiscordUsers,
+} from './grader';
 
 // Constants
 const DATA_DIR = 'data';
 const DEFAULT_TITLE = 'Homework';
+let bot: Bot;
 
 // Entry point
+try {
+  bot = new Bot();
+} catch (e: any) {
+  error(`An error occurred: ${e.message}`);
+  process.exit();
+}
+
 executeFlow();
+
+// Helpers
 
 async function executeFlow() {
   // 0. Hello
-  displayMessage('✨ Welcome to the grader Bot ✨', true);
+  greet('✨ Welcome to the grader Bot ✨');
 
   // 1. Set title
   const title = await getInput(
@@ -32,43 +47,42 @@ async function executeFlow() {
     DEFAULT_TITLE
   );
 
-  // 2. Pick a CSV file with the discordID and user names/ids
+  // 2. Load the users of Discord
   const usersFile = await pickFile(
     "Select participants' list (csv file):",
     DATA_DIR,
-    /.*.(csv|CSV)$/
+    /.*.(xlsx|XLSX|xls|XLS)$/
   );
 
-  // 3. Get the users from the file
-  let users: DiscordUser[] = await getDiscordUsers(usersFile);
+  loadDiscordUsers(usersFile);
 
-  // 4. Do you want to pick specific users
-  const ans = await pickFromList('Do you want to select specific users?', [
-    'No',
-    'Yes',
-  ]);
-  if (ans == 'Yes') {
-    const filteredUsers = await checkFromList(
-      'Select the users:',
-      users.map((e) => e.toString())
-    );
-
-    users = filteredUsers.map(
-      ({ _, index }: { _: any; index: number }) => users[index]
-    );
-  }
-
-  // 5. Pick an excel file with the score
+  // 3. Pick an excel file with the score
   const scoreFile = await pickFile(
     'Select a file with the score (Excel file):',
     DATA_DIR,
     /.*.(xlsx|XLSX|xls|XLS)$/
   );
+  const scoreData = getParticipantsData(scoreFile);
+
+  // 4. Do you want to pick specific users
+
+  let filteredUsers = scoreData;
+  const ans = await pickFromList('Do you want to select specific users?', [
+    'No',
+    'Yes',
+  ]);
+  if (ans == 'Yes') {
+    filteredUsers = await checkFromList(
+      'Select the users:',
+      scoreData.map((e) => ({
+        name: e.name,
+        value: e,
+      }))
+    );
+  }
 
   // 6. Get message for the users
-  const scores = getScores(scoreFile);
-  const summary = summarizeData(scores, users);
-  const messagesToSend = makeMessages(summary, title);
+  const messages = filteredUsers.map(generateMessage);
 
   // 7. What do you want to do now?
   while (true) {
@@ -80,14 +94,14 @@ async function executeFlow() {
 
     switch (doit) {
       case 'Exit':
-        displayMessage('Bye ✌️');
+        greet('Bye ✌️');
         process.exit();
         break;
       case 'Visualize the scores':
-        visualizeMessages(messagesToSend);
+        visualizeMessages(messages);
         break;
       case 'Send the scores via Discord Bot':
-        sendMessages(messagesToSend);
+        sendMessages(messages, title);
         break;
     }
   }
@@ -95,93 +109,38 @@ async function executeFlow() {
 
 // Helpers
 
-type Summary = {
-  id: string;
-  discordID: string;
-  name: string;
-  score: string;
-  average: string;
-  description: string;
-};
-
-type Message = {
-  discordID: string;
-  message: string;
-  name: string;
-};
-
-function summarizeData(scores: Score[], users: DiscordUser[]): Summary[] {
-  return (
-    scores
-      .map((score: Score): Summary | undefined => {
-        const user = users.find(({ id }: DiscordUser) => id === score.id);
-
-        if (!user) {
-          // No discord ID found
-          return undefined;
-        }
-        const avgScore =
-          scores.reduce((sum: number, { score }: Score) => sum + score, 0) /
-          scores.length;
-
-        return {
-          score: score.scoreFormatted,
-          average: avgScore.toFixed(1),
-          id: score.id,
-          discordID: user.discordID,
-          name: user.name,
-          description: score.description,
-        };
-      })
-      // filter out the undefined values
-      // need to cast to Summary[]!
-      .filter((s: Summary | undefined) => s != undefined) as Summary[]
-  );
-}
-
-function makeMessages(data: Summary[], title: string): Message[] {
-  const prettyTitle = `\`\`\`json\n"${title}"\n\`\`\`\n`;
-
-  return data.map(
-    ({ id, name, discordID, score, average, description }: Summary) => {
-      return {
-        discordID,
-        name,
-        message:
-          `${prettyTitle}Hi ${name} (${id}), your homework score is **${score} / 100** (Average: **${average} / 100**).` +
-          `\n\nThe individual parts are graded this way: ${description}`,
-      };
-    }
-  );
-}
-
-function visualizeMessages(messagesToSend: Message[]) {
-  if (messagesToSend.length == 0) displayError('Nothing to display');
+function visualizeMessages(messagesToSend: MessageInfo[]) {
+  if (messagesToSend.length == 0) error('Nothing to display');
   else
-    messagesToSend.forEach((m: Message, i: number) =>
-      i % 2 == 0 ? displaySuccess(m.message) : displayWarning(m.message)
+    messagesToSend.forEach(({ message: m }, i: number) =>
+      i % 2 == 0 ? success(m) : warning(m)
     );
 }
 
-async function sendMessages(messagesToSend: Message[]) {
-  const bot = new Bot();
+function makeTitle(title: string): string {
+  return `\`\`\`json\n"${title}"\n\`\`\`\n`;
+}
+
+async function sendMessages(messagesToSend: MessageInfo[], titleText: string) {
+  if (!bot) throw new Error('Bot cannot be initialized');
 
   // Connect
   try {
     await bot.login(2000);
-    displaySuccess('Bot connected');
+    success('Bot connected');
   } catch (err: any) {
-    displayError(err);
+    error(err);
     return; // bye
   }
 
+  const title = makeTitle(titleText);
   // Send one by one
   for (let m of messagesToSend) {
     const spinner = createSpinner(
-      `Sending message to ${m.name} (${m.discordID})`
+      `Sending message to ${m.receipientName} (${m.receipientDiscordID})`
     ).start();
     try {
-      await bot.sendData(m.discordID, m.message);
+      await bot.sendData(m.receipientDiscordID, title + m.message);
       spinner.success();
     } catch (err: any) {
       spinner?.error();

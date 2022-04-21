@@ -1,102 +1,87 @@
-import { createReadStream } from 'fs';
-import csv from 'csv-parser';
 import xlsx from 'xlsx';
 import path from 'path';
 
-type Prop = {
-  [prop: string]: string | number;
-};
-
-class Score {
-  constructor(
-    private _id: string,
-    private _score: number,
-    private _otherFileds: Prop
-  ) {}
-
-  get score() {
-    return this._score;
-  }
-  get scoreFormatted() {
-    return this._score.toFixed(2);
-  }
-  get id() {
-    return this._id;
-  }
-  get otherFileds() {
-    return this._otherFileds;
-  }
-  get description() {
-    return Object.entries(this._otherFileds).reduce(
-      (acc: string, [key, value], i: number) =>
-        i == 0 ? acc + `**${key}**: ${value}` : acc + ` | **${key}**: ${value}`,
-      ''
-    );
-  }
+interface Participant {
+  id: string;
+  name: string;
+  score: number;
+  discordID: string;
 }
 
-function getScores(scoreFilePath: string): Score[] {
-  const workbook = xlsx.readFile(scoreFilePath);
+interface DiscordUser {
+  id: string;
+  name: string;
+  discordID: string;
+}
+
+interface MessageInfo {
+  receipientName: string;
+  receipientDiscordID: string;
+  message: string;
+}
+
+let discordData: DiscordUser[] = [];
+
+function getParticipantsData(filePath: string): Participant[] {
+  const workbook = xlsx.readFile(filePath);
   const firstSheet = workbook.SheetNames[0];
 
   // Get the data of "Sheet1"
-  const rawdata: any[] = xlsx.utils.sheet_to_json(workbook.Sheets[firstSheet]);
-
-  return rawdata.map(
-    ({ id, score, ...props }: { id: string; score: number; props: any }) =>
-      new Score('' + id, score, { ...props })
+  const data: Participant[] = xlsx.utils.sheet_to_json(
+    workbook.Sheets[firstSheet],
+    { raw: false }
   );
-}
 
-class DiscordUser {
-  constructor(
-    private _discordID: string,
-    private _name: string,
-    private _id: string
-  ) {}
+  // Decorate all data with name and discordID
+  data.forEach((p: Participant) => {
+    const { id: pid } = p;
+    const ddata = discordData.find(({ id }: DiscordUser) => id == pid);
+    if (!ddata) throw new Error(`Unable to find user id ${pid}`);
 
-  get id() {
-    return this._id;
-  }
-  get discordID() {
-    return this._discordID;
-  }
-  get name() {
-    return this._name;
-  }
-
-  toString(): string {
-    return `${this._name} (${this._id})`;
-  }
-}
-
-function getDiscordUsers(participantsFilePath: string): Promise<DiscordUser[]> {
-  return new Promise(async (resolve) => {
-    const result: DiscordUser[] = [];
-
-    const file = path.resolve('../data/participants.csv');
-
-    createReadStream(participantsFilePath)
-      // order is important
-      .pipe(csv({ headers: ['id', 'name', 'discordID'], skipLines: 1 })) // skip first line
-      .on(
-        'data',
-        ({
-          id,
-          name,
-          discordID,
-        }: {
-          id: string;
-          name: string;
-          discordID: string;
-        }) => {
-          result.push(new DiscordUser(discordID, name, id));
-        }
-      )
-      .on('end', () => {
-        // console.log('CSV file successfully processed');
-        resolve(result);
-      });
+    p.name = ddata!.name;
+    p.discordID = '' + ddata!.discordID;
   });
+
+  return data;
 }
-export { DiscordUser, getDiscordUsers, Score, getScores };
+
+function loadDiscordUsers(filePath: string) {
+  const workbook = xlsx.readFile(filePath);
+  const firstSheet = workbook.SheetNames[0]; // Get the data of "Sheet1"
+
+  const data: DiscordUser[] = xlsx.utils.sheet_to_json(
+    workbook.Sheets[firstSheet]
+  );
+  discordData = data.map(({ id, name, discordID }: any) => ({
+    id,
+    name,
+    discordID,
+  }));
+}
+
+function generateMessage(data: Participant): MessageInfo {
+  const { id, name, score, discordID, ...others } = data;
+  const description = Object.entries(others).reduce(
+    (str: string, [key, value]: any[], i: number) => {
+      return str + `\n**${key}**: ${value}`;
+    },
+    ''
+  );
+
+  return {
+    receipientName: name,
+    receipientDiscordID: discordID,
+    message:
+      `Hi ${name} (${id}), your score is **${score} / 100**.` +
+      `\n\nThe individual parts are graded this way: ${description}`,
+  };
+}
+
+export {
+  Participant,
+  MessageInfo,
+  getParticipantsData,
+  loadDiscordUsers,
+  discordData,
+  generateMessage,
+};
