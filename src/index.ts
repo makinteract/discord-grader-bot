@@ -13,7 +13,6 @@ import {
   getInput,
 } from './ui';
 import {
-  Participant,
   MessageInfo,
   getParticipantsData,
   generateMessage,
@@ -62,7 +61,13 @@ async function executeFlow() {
     DATA_DIR,
     /.*.(xlsx|XLSX|xls|XLS)$/
   );
-  const scoreData = getParticipantsData(scoreFile);
+  let scoreData;
+  try {
+    scoreData = getParticipantsData(scoreFile);
+  } catch (err: any) {
+    error(err.message);
+    process.exit();
+  }
 
   // 4. Do you want to pick specific users
 
@@ -81,10 +86,10 @@ async function executeFlow() {
     );
   }
 
-  // 6. Get message for the users
+  // 5. Get message for the users
   const messages = filteredUsers.map(generateMessage);
 
-  // 7. What do you want to do now?
+  // 6. What do you want to do now?
   while (true) {
     const doit = await pickFromList(
       'Do you want to do now?',
