@@ -1,11 +1,4 @@
-<style>
-  h1 img{
-    width: 50px;
-    vertical-align:bottom;
-  }
-  </style>
-
-# ![](assets/bot.png) Discord Bot
+# 🤖 Discord Bot
 
 Send direct private message to students with a bot to let them know about their score.
 
