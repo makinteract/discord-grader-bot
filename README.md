@@ -1,10 +1,26 @@
 # 🤖 Discord Bot
 
-Send direct private message to students with a bot to let them know about their score.
+Send a direct private message to students with a bot to let them know about their scores.
 
-To get started, add some data to the `data` folder. See an [example here](example).
+To get started, add some `participants` ([example here](examples/participants.xlsx)) and `scores` ([example here](examples/HW.xlsx)) as excel files in the `data` folder.
 
-Make sure also to create a `.env` file in the root folder and add your bot token. For example (an obviously fake token here...):
+Your participants' data should include the following columns: `id`, `name`, and `discordID`. Here is an example:
+
+| id   | name  | discord ID        |
+| ---- | ----- | ----------------- |
+| 1004 | Linda | 79217398712938712 |
+
+Your score data should include the following columns: `id` and `score`. Example:
+
+| id   | score |
+| ---- | ----- |
+| 1004 | 90    |
+
+Optionally, you can add as many columns as you want with the score of parts of the homework.
+
+## Before you start
+
+Make also create a `.env` file in the root folder and add your bot token. For example (an obviously fake token here...):
 
 ```
 TOKEN=OTasdfasdfE2Mjkxasdfasdfw.Yhb4Cg.Hx_asdfasdfasdfasdf
