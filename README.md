@@ -2,6 +2,8 @@
 
 Send a direct private message to students with a bot to let them know about their scores.
 
+![](assets/screenshot.png)
+
 To get started, add some `participants` ([example here](examples/participants.xlsx)) and `scores` ([example here](examples/HW.xlsx)) as excel files in the `data` folder.
 
 Your participants' data should include the following columns: `id`, `name`, and `discordID`. Here is an example:
@@ -26,4 +28,7 @@ Make also create a `.env` file in the root folder and add your bot token. For ex
 TOKEN=OTasdfasdfE2Mjkxasdfasdfw.Yhb4Cg.Hx_asdfasdfasdfasdf
 ```
 
-![](assets/screenshot.png)
+- Here how to setup the bot and where to get a token
+  https://discord.com/developers/applications
+- You then need to generate a URL (OAuth section) to invite the bot to the server
+  https://www.youtube.com/watch?v=4XswiJ1iUaw

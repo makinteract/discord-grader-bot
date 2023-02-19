@@ -23,6 +23,7 @@
     "nanospinner": "^1.0.0",
     "nodemon": "^2.0.15",
     "ramda": "^0.28.0",
+    "ts-node": "^10.9.1",
     "xlsx": "^0.18.2"
   },
   "devDependencies": {
