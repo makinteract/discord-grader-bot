@@ -34,12 +34,14 @@ function getParticipantsData(filePath: string): Participant[] {
 
   // Decorate all data with name and discordID
   data.forEach((p: Participant) => {
-    const { id: pid } = p;
+    const { id: pid, name } = p;
     const ddata = discordData.find(({ id }: DiscordUser) => id == pid);
-    if (!ddata) throw new Error(`Unable to find user id ${pid}`);
-
-    p.name = ddata!.name;
-    p.discordID = '' + ddata!.discordID;
+    if (ddata) {
+      p.name = ddata!.name;
+      p.discordID = '' + ddata!.discordID;
+    } else {
+      throw new Error(`Unable to find user id ${pid} of name ${name}`);
+    }
   });
 
   return data;

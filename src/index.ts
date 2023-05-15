@@ -48,7 +48,7 @@ async function executeFlow() {
 
   // 2. Load the users of Discord
   const usersFile = await pickFile(
-    "Select participants' list (csv file):",
+    "Select participants' list (Excel file):",
     DATA_DIR,
     /.*.(xlsx|XLSX|xls|XLS)$/
   );
